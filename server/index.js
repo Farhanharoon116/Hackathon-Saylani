@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const rateLimit = require("express-rate-limit");
 const connectDB = require("./config/db");
 
 dotenv.config();
@@ -23,6 +24,13 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { message: "Too many requests, please try again later" },
+  })
+);
 
 // Routes
 app.use("/api/auth", authRoutes);
