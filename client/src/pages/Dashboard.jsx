@@ -3,38 +3,26 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import api from '@/api/axios'
 import PageHeader from '@/components/layout/PageHeader'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import {
-  FileText,
-  HandHelping,
-  Star,
-  Award,
-  Plus,
-  Compass,
-  MessageSquare,
-  ChevronRight,
-} from 'lucide-react'
+import { CategoryTag, UrgencyTag, StatusTag } from '@/components/ui/badge'
 
 export default function Dashboard() {
   const { user } = useAuth()
   const [requests, setRequests] = useState([])
-  const [stats, setStats] = useState({ myRequests: 0, helping: 0 })
+  const [insights, setInsights] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [reqRes] = await Promise.all([
-          api.get('/requests/my').catch(() => ({ data: { requests: [] } })),
+        const [reqRes, aiRes] = await Promise.all([
+          api.get('/requests').catch(() => ({ data: { requests: [] } })),
+          api.get('/ai/insights').catch(() => ({ data: null })),
         ])
-        const myReqs = reqRes.data.requests || reqRes.data || []
+        const allReqs = reqRes.data.requests || reqRes.data || []
+        // Show user's own requests
+        const myReqs = allReqs.filter(r => (r.requester?._id || r.requester) === user?._id)
         setRequests(myReqs.slice(0, 5))
-        setStats({
-          myRequests: myReqs.length,
-          helping: user?.contributions || 0,
-        })
+        setInsights(aiRes.data)
       } catch {
         // silently handle
       } finally {
@@ -44,115 +32,142 @@ export default function Dashboard() {
     fetchData()
   }, [user])
 
-  const statCards = [
-    { label: 'My Requests', value: stats.myRequests, icon: FileText, color: 'text-blue-600 bg-blue-50' },
-    { label: 'Helping Others', value: stats.helping, icon: HandHelping, color: 'text-emerald-600 bg-emerald-50' },
-    { label: 'Trust Score', value: user?.trustScore || 0, icon: Star, color: 'text-amber-600 bg-amber-50' },
-    { label: 'Contributions', value: user?.contributions || 0, icon: Award, color: 'text-purple-600 bg-purple-50' },
-  ]
-
-  const quickActions = [
-    { to: '/create-request', label: 'Create New Request', icon: Plus, variant: 'default' },
-    { to: '/explore', label: 'Explore Requests', icon: Compass, variant: 'outline' },
-    { to: '/messages', label: 'View Messages', icon: MessageSquare, variant: 'outline' },
-  ]
+  const myRequestCount = requests.length
+  const helpedCount = user?.contributions || 0
+  const trustScore = user?.trustScore || 0
+  const badgeCount = user?.badges?.length || 0
 
   return (
     <div>
       <PageHeader
         label="DASHBOARD"
-        title={`Welcome back, ${user?.name || 'User'}`}
-        description="Here's an overview of your activity and quick actions to get started."
+        title={`Welcome back, ${user?.name || 'User'}.`}
+        description="Here's what's happening in your network."
       />
 
-      {/* Stats */}
+      {/* ROW 1 — Four stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {statCards.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${stat.color}`}>
-                  <stat.icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <p className="text-3xl font-black text-gray-900">{myRequestCount}</p>
+          <p className="text-xs text-gray-400 mt-1">requests posted</p>
+          <p className="text-sm font-semibold text-gray-700 mt-2">My Requests</p>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <p className="text-3xl font-black text-gray-900">{helpedCount}</p>
+          <p className="text-xs text-gray-400 mt-1">people helped</p>
+          <p className="text-sm font-semibold text-gray-700 mt-2">Helped Others</p>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <p className="text-3xl font-black text-gray-900">{trustScore}%</p>
+          <p className="text-xs text-gray-400 mt-1">community trust</p>
+          <p className="text-sm font-semibold text-gray-700 mt-2">Trust Score</p>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <p className="text-3xl font-black text-gray-900">{badgeCount}</p>
+          <p className="text-xs text-gray-400 mt-1">achievements</p>
+          <p className="text-sm font-semibold text-gray-700 mt-2">Badges</p>
+          {user?.badges && user.badges.length > 0 && (
+            <div className="flex gap-1 mt-2">
+              {user.badges.slice(0, 2).map((b, i) => (
+                <span key={i} className="bg-[#2A7A63]/10 text-[#2A7A63] rounded-full px-2 py-0.5 text-xs">{b}</span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      {/* ROW 2 — Two columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Recent Requests */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Recent Requests</CardTitle>
-              <Link to="/explore">
-                <Button variant="ghost" size="sm" className="gap-1">
-                  View all <ChevronRight className="h-4 w-4" />
-                </Button>
+        <div className="lg:col-span-2 bg-white rounded-2xl p-8 shadow-sm">
+          <p className="text-xs font-semibold tracking-widest uppercase text-[#2A7A63] mb-2">RECENT ACTIVITY</p>
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Your latest requests</h3>
+
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-14 bg-gray-100 rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : requests.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-400 text-sm">No requests yet</p>
+              <Link to="/create-request" className="text-[#2A7A63] text-sm font-medium mt-2 inline-block">
+                Create your first request →
               </Link>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" />
-                  ))}
-                </div>
-              ) : requests.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">No requests yet</p>
-                  <Link to="/create-request">
-                    <Button size="sm" className="mt-3">Create your first request</Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {requests.map((req) => (
-                    <Link
-                      key={req._id}
-                      to={`/requests/${req._id}`}
-                      className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-sm truncate">{req.title}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant={req.urgency === 'High' ? 'destructive' : req.urgency === 'Medium' ? 'warning' : 'default'}>
-                            {req.urgency || 'Low'}
-                          </Badge>
-                          <Badge variant="secondary">{req.category || 'General'}</Badge>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {requests.map((req) => (
+                <div key={req._id} className="py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="flex gap-1.5 shrink-0">
+                      <CategoryTag>{req.category || 'General'}</CategoryTag>
+                      <UrgencyTag level={req.urgency} />
+                    </div>
+                    <span className="font-medium text-sm text-gray-900 truncate">{req.title}</span>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0 ml-4">
+                    <StatusTag status={req.status} />
+                    <Link to={`/requests/${req._id}`} className="text-[#2A7A63] text-sm font-medium">
+                      View →
                     </Link>
-                  ))}
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              ))}
+            </div>
+          )}
+          <div className="mt-4 pt-2">
+            <Link to="/explore" className="text-[#2A7A63] text-sm font-medium">
+              View all requests →
+            </Link>
+          </div>
         </div>
 
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {quickActions.map((action) => (
-              <Link key={action.to} to={action.to} className="block">
-                <Button variant={action.variant} className="w-full justify-start gap-2">
-                  <action.icon className="h-4 w-4" />
-                  {action.label}
-                </Button>
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
+        {/* AI Insights */}
+        <div className="bg-white rounded-2xl p-8 shadow-sm">
+          <p className="text-xs font-semibold tracking-widest uppercase text-[#2A7A63] mb-2">AI CENTER</p>
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Platform intelligence</h3>
+
+          <div className="divide-y divide-gray-100">
+            <div className="py-4">
+              <p className="text-xs text-gray-400">Trend Pulse</p>
+              <p className="font-bold text-gray-900">{insights?.trendPulse?.topics?.[0] || 'Web Development'}</p>
+              <p className="text-xs text-gray-400 mt-1">Most common support area</p>
+            </div>
+            <div className="py-4">
+              <p className="text-xs text-gray-400">Urgency Watch</p>
+              <p className="font-bold text-gray-900">{insights?.urgencyWatch?.highUrgencyCount || 0}</p>
+              <p className="text-xs text-gray-400 mt-1">High priority requests</p>
+            </div>
+            <div className="py-4">
+              <p className="text-xs text-gray-400">Mentor Pool</p>
+              <p className="font-bold text-gray-900">{insights?.mentorPool?.availableMentors || 0}</p>
+              <p className="text-xs text-gray-400 mt-1">Trusted helpers available</p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <Link to="/ai-center" className="text-[#2A7A63] text-sm font-medium">
+              Open AI Center →
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      <div className="flex gap-3">
+        <Link
+          to="/create-request"
+          className="bg-[#1E2D2A] text-white rounded-full px-6 py-2.5 text-sm font-medium hover:bg-[#1E2D2A]/90 transition-colors"
+        >
+          Create a Request
+        </Link>
+        <Link
+          to="/explore"
+          className="border border-gray-300 text-gray-900 rounded-full px-6 py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors"
+        >
+          Explore Feed
+        </Link>
       </div>
     </div>
   )
