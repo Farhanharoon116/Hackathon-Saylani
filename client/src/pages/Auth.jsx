@@ -25,7 +25,7 @@ export default function Auth() {
   }
 
   if (user) {
-    return <Navigate to={user.isOnboarded ? '/dashboard' : '/onboarding'} replace />
+    return <Navigate to={user.onboarded ? '/dashboard' : '/onboarding'} replace />
   }
 
   const handleSubmit = async (e) => {
@@ -35,10 +35,10 @@ export default function Auth() {
     try {
       if (mode === 'login') {
         const data = await login(form.email, form.password)
-        navigate(data.user?.isOnboarded ? '/dashboard' : '/onboarding')
+        navigate(data.user?.onboarded ? '/dashboard' : '/onboarding')
       } else {
         const data = await register(form.name, form.email, form.password, form.role)
-        navigate(data.user?.isOnboarded ? '/dashboard' : '/onboarding')
+        navigate(data.user?.onboarded ? '/dashboard' : '/onboarding')
       }
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Something went wrong')

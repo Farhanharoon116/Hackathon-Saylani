@@ -46,13 +46,13 @@ export default function Onboarding() {
         skills: form.skills.split(',').map((s) => s.trim()).filter(Boolean),
         interests: form.interests.split(',').map((s) => s.trim()).filter(Boolean),
         location: form.location,
-        isOnboarded: true,
+        onboarded: true,
       }
-      const { data } = await api.put('/auth/profile', payload)
+      const { data } = await api.put('/users/profile', payload)
       updateUser(data.user || { ...payload })
       navigate('/dashboard')
     } catch {
-      updateUser({ isOnboarded: true })
+      updateUser({ onboarded: true })
       navigate('/dashboard')
     } finally {
       setSaving(false)

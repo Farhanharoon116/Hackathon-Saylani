@@ -16,7 +16,7 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/auth" replace />
   }
 
-  if (!user.isOnboarded && window.location.pathname !== '/onboarding') {
+  if (!user.onboarded && window.location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />
   }
 

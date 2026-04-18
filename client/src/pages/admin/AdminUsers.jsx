@@ -91,10 +91,10 @@ export default function AdminUsers() {
                       <td className="py-3 text-sm text-muted-foreground">{u.email}</td>
                       <td className="py-3">
                         <Badge
-                          variant={u.role === 'admin' ? 'destructive' : u.role === 'can_help' ? 'default' : 'secondary'}
+                          variant={u.isAdmin ? 'destructive' : u.role === 'can_help' ? 'default' : 'secondary'}
                           className="text-xs"
                         >
-                          {u.role}
+                          {u.isAdmin ? 'admin' : u.role}
                         </Badge>
                       </td>
                       <td className="py-3 text-center text-sm font-medium">{u.trustScore || 0}</td>
@@ -113,7 +113,7 @@ export default function AdminUsers() {
                               <ExternalLink className="h-3.5 w-3.5" />
                             </Button>
                           </Link>
-                          {u.role !== 'admin' && (
+                          {!u.isAdmin && (
                             <Button
                               variant="ghost"
                               size="icon"

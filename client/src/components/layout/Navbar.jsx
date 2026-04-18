@@ -117,7 +117,7 @@ export default function Navbar() {
                         {item.label}
                       </Link>
                     ))}
-                    {user.role === 'admin' && (
+                    {user.isAdmin && (
                       <Link
                         to="/admin"
                         onClick={() => setDropdownOpen(false)}
@@ -171,7 +171,7 @@ export default function Navbar() {
                 {item.label}
               </NavLink>
             ))}
-            {user.role === 'admin' && (
+            {user.isAdmin && (
               <NavLink
                 to="/admin"
                 onClick={() => setMobileOpen(false)}

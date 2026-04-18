@@ -68,7 +68,7 @@ export default function Profile() {
         skills: editForm.skills.split(',').map((s) => s.trim()).filter(Boolean),
         interests: editForm.interests.split(',').map((s) => s.trim()).filter(Boolean),
       }
-      const { data } = await api.put('/auth/profile', payload)
+      const { data } = await api.put('/users/profile', payload)
       const updated = data.user || payload
       updateUser(updated)
       setProfile((prev) => ({ ...prev, ...updated }))
@@ -126,15 +126,15 @@ export default function Profile() {
             )}
             <div className="flex items-center justify-center gap-1 mt-2">
               <Badge variant={
-                profile.role === 'admin' ? 'destructive' :
+                profile.isAdmin ? 'destructive' :
                 profile.role === 'can_help' ? 'default' :
                 profile.role === 'both' ? 'success' : 'secondary'
               }>
-                {profile.role === 'admin' && <Shield className="h-3 w-3 mr-1" />}
-                {profile.role === 'need_help' ? 'Needs Help' :
+                {profile.isAdmin && <Shield className="h-3 w-3 mr-1" />}
+                {profile.isAdmin ? 'Admin' :
+                 profile.role === 'need_help' ? 'Needs Help' :
                  profile.role === 'can_help' ? 'Helper' :
-                 profile.role === 'both' ? 'Helper & Seeker' :
-                 profile.role === 'admin' ? 'Admin' : profile.role}
+                 profile.role === 'both' ? 'Helper & Seeker' : profile.role}
               </Badge>
             </div>
 
