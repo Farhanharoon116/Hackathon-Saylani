@@ -138,7 +138,7 @@ http://localhost:5173
 
 ---
 
-## AI Features (Gemini 1.5 Flash)
+## AI Features (Gemini 2.5 Flash-lite)
 
 - **Create Request** — as you type your description, Gemini suggests category, urgency, tags, and a rewritten description in real time (debounced)
 - **Onboarding** — Gemini analyzes your skills and interests and suggests what you can help with and where you may need help
