@@ -7,7 +7,7 @@ const getLeaderboard = async (req, res) => {
       .sort({ trustScore: -1 })
       .limit(10);
 
-    res.json({ leaderboard: users });
+    res.json({ users });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
