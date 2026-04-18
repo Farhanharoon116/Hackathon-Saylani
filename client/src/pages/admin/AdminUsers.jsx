@@ -29,14 +29,10 @@ export default function AdminUsers() {
 
   const toggleBan = async (userId, isBanned) => {
     try {
-      if (isBanned) {
-        await api.patch(`/admin/users/${userId}/unban`)
-      } else {
-        await api.patch(`/admin/users/${userId}/ban`)
-      }
+      await api.patch(`/admin/users/${userId}/ban`)
       setUsers((prev) =>
         prev.map((u) =>
-          u._id === userId ? { ...u, isBanned: !isBanned } : u
+          u._id === userId ? { ...u, role: isBanned ? 'both' : 'banned' } : u
         )
       )
     } catch {
@@ -100,7 +96,7 @@ export default function AdminUsers() {
                       <td className="py-3 text-center text-sm font-medium">{u.trustScore || 0}</td>
                       <td className="py-3 text-center text-sm">{u.contributions || 0}</td>
                       <td className="py-3">
-                        {u.isBanned ? (
+                        {u.role === 'banned' ? (
                           <Badge variant="destructive" className="text-xs">Banned</Badge>
                         ) : (
                           <Badge variant="success" className="text-xs">Active</Badge>
@@ -117,10 +113,10 @@ export default function AdminUsers() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className={`h-8 w-8 ${u.isBanned ? 'text-primary hover:text-primary' : 'text-destructive hover:text-destructive'}`}
-                              onClick={() => toggleBan(u._id, u.isBanned)}
+                              className={`h-8 w-8 ${u.role === 'banned' ? 'text-primary hover:text-primary' : 'text-destructive hover:text-destructive'}`}
+                              onClick={() => toggleBan(u._id, u.role === 'banned')}
                             >
-                              {u.isBanned ? (
+                              {u.role === 'banned' ? (
                                 <ShieldCheck className="h-3.5 w-3.5" />
                               ) : (
                                 <ShieldBan className="h-3.5 w-3.5" />
