@@ -25,7 +25,7 @@ export function Avatar({ name, size = "md", className, index }) {
     sm: "w-9 h-9 text-sm",
     md: "w-10 h-10 text-sm",
     lg: "w-12 h-12 text-lg",
-    xl: "w-20 w-20 text-2xl",
+    xl: "w-20 h-20 text-2xl",
   }
 
   return (
