@@ -56,7 +56,7 @@ export default function Messages() {
     setSending(true)
     try {
       await api.post('/messages', {
-        recipientId: form.recipientId,
+        recipient: form.recipientId,
         content: form.content.trim(),
       })
       setForm({ recipientId: '', content: '' })
