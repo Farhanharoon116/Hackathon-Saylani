@@ -1,26 +1,6 @@
 import { useEffect, useState } from 'react'
 import api from '@/api/axios'
 import PageHeader from '@/components/layout/PageHeader'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import {
-  Bell,
-  CheckCheck,
-  HandHelping,
-  MessageSquare,
-  Star,
-  FileText,
-  Info,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
-
-const typeIcons = {
-  help_offered: HandHelping,
-  message: MessageSquare,
-  request_solved: Star,
-  new_request: FileText,
-  system: Info,
-}
 
 function timeAgo(date) {
   if (!date) return ''
@@ -73,82 +53,65 @@ export default function Notifications() {
     }
   }
 
-  const unreadCount = notifications.filter((n) => !n.read).length
-
   return (
     <div>
       <PageHeader
         label="NOTIFICATIONS"
-        title="Stay updated"
-        description={`You have ${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}.`}
+        title="Stay updated on requests, helpers, and trust signals."
       />
 
-      <div className="flex justify-between items-center mb-6">
-        <p className="text-sm text-muted-foreground">
-          {notifications.length} notification{notifications.length !== 1 ? 's' : ''}
-        </p>
-        {unreadCount > 0 && (
-          <Button variant="outline" size="sm" onClick={markAllRead} className="gap-2">
-            <CheckCheck className="h-4 w-4" />
-            Mark All as Read
-          </Button>
+      <div className="bg-white rounded-2xl p-8 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <p className="text-xs font-semibold tracking-widest uppercase text-[#2A7A63] mb-1">LIVE UPDATES</p>
+            <h2 className="text-2xl font-bold text-gray-900">Notification feed</h2>
+          </div>
+          <button
+            onClick={markAllRead}
+            className="border border-gray-200 text-gray-700 rounded-full px-4 py-1.5 text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            Mark all read
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-400 text-sm">Nothing here yet.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {notifications.map((notif) => (
+              <div
+                key={notif._id}
+                onClick={() => !notif.read && markRead(notif._id)}
+                className="py-5 flex items-start justify-between cursor-pointer hover:bg-gray-50/50 -mx-2 px-2 rounded-lg transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900">
+                    {notif.message || notif.content || 'New notification'}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {notif.type || 'Status'} • {timeAgo(notif.createdAt)}
+                  </p>
+                </div>
+                <span className={`rounded-full px-3 py-1 text-xs font-medium shrink-0 ml-3 ${
+                  notif.read
+                    ? 'bg-gray-50 text-gray-400'
+                    : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {notif.read ? 'Read' : 'Unread'}
+                </span>
+              </div>
+            ))}
+          </div>
         )}
       </div>
-
-      {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-16 bg-muted rounded-xl animate-pulse" />
-          ))}
-        </div>
-      ) : notifications.length === 0 ? (
-        <Card>
-          <CardContent className="py-16 text-center">
-            <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="font-semibold text-lg mb-2">No notifications</h3>
-            <p className="text-muted-foreground">You're all caught up!</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-2">
-          {notifications.map((notif) => {
-            const Icon = typeIcons[notif.type] || Bell
-            return (
-              <Card
-                key={notif._id}
-                className={cn(
-                  'cursor-pointer hover:shadow-sm transition-all',
-                  !notif.read && 'border-primary/30 bg-primary/5'
-                )}
-                onClick={() => !notif.read && markRead(notif._id)}
-              >
-                <CardContent className="py-4 flex items-start gap-3">
-                  <div className={cn(
-                    'h-9 w-9 rounded-full flex items-center justify-center shrink-0',
-                    !notif.read ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                  )}>
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={cn(
-                      'text-sm',
-                      !notif.read ? 'font-medium' : 'text-muted-foreground'
-                    )}>
-                      {notif.message || notif.content || 'New notification'}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {timeAgo(notif.createdAt)}
-                    </p>
-                  </div>
-                  {!notif.read && (
-                    <div className="h-2.5 w-2.5 rounded-full bg-primary shrink-0 mt-1" />
-                  )}
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
     </div>
   )
 }

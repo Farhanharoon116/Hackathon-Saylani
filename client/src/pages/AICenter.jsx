@@ -1,150 +1,103 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import api from '@/api/axios'
 import PageHeader from '@/components/layout/PageHeader'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { TrendingUp, AlertTriangle, Users, Sparkles, RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-
-const insightCards = [
-  {
-    key: 'trendPulse',
-    title: 'Trend Pulse',
-    icon: TrendingUp,
-    color: 'text-blue-600 bg-blue-50',
-    description: 'Most active topics and growing areas in the community.',
-  },
-  {
-    key: 'urgencyWatch',
-    title: 'Urgency Watch',
-    icon: AlertTriangle,
-    color: 'text-amber-600 bg-amber-50',
-    description: 'High-urgency requests that need immediate attention.',
-  },
-  {
-    key: 'mentorPool',
-    title: 'Mentor Pool',
-    icon: Users,
-    color: 'text-emerald-600 bg-emerald-50',
-    description: 'Available mentors and their areas of expertise.',
-  },
-]
+import { CategoryTag, UrgencyTag } from '@/components/ui/badge'
 
 export default function AICenter() {
   const [insights, setInsights] = useState(null)
+  const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
 
-  const fetchInsights = async () => {
-    setLoading(true)
-    try {
-      const { data } = await api.get('/ai/insights')
-      setInsights(data)
-    } catch {
-      setInsights({
-        trendPulse: {
-          topics: ['Web Development', 'React', 'Python'],
-          summary: 'Web Development continues to be the most active category with growing interest in React and AI/ML.',
-        },
-        urgencyWatch: {
-          highUrgencyCount: 5,
-          summary: 'There are several high-urgency requests in Career and Web Development categories that need attention.',
-        },
-        mentorPool: {
-          availableMentors: 12,
-          topSkills: ['JavaScript', 'React', 'Node.js', 'Python'],
-          summary: 'Strong mentor availability in JavaScript ecosystem. Growing need for Data Science mentors.',
-        },
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    fetchInsights()
+    async function fetchData() {
+      try {
+        const [aiRes, reqRes] = await Promise.all([
+          api.get('/ai/insights').catch(() => ({ data: null })),
+          api.get('/requests').catch(() => ({ data: { requests: [] } })),
+        ])
+        setInsights(aiRes.data)
+        const allReqs = reqRes.data.requests || reqRes.data || []
+        setRequests(allReqs.filter(r => r.status === 'Open').slice(0, 10))
+      } catch {
+        // silently handle
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
   }, [])
 
   return (
     <div>
       <PageHeader
         label="AI CENTER"
-        title="Community Intelligence Dashboard"
-        description="AI-powered insights about community trends, urgent needs, and mentorship opportunities."
+        title="See what the platform intelligence is noticing."
+        description="AI-like insights summarize demand trends, helper readiness, urgency signals, and request recommendations."
       />
 
-      <div className="flex justify-end mb-6">
-        <Button variant="outline" onClick={fetchInsights} disabled={loading} className="gap-2">
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh Insights
-        </Button>
+      {/* ROW 1 — Three stat cards */}
+      <div className="grid md:grid-cols-3 gap-4 mb-8">
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <p className="text-xs font-semibold tracking-widest uppercase text-gray-400 mb-2">TREND PULSE</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {insights?.trendPulse?.topics?.[0] || 'Web Development'}
+          </p>
+          <p className="text-sm text-gray-400 mt-2">
+            Most common support area based on active community requests.
+          </p>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <p className="text-xs font-semibold tracking-widest uppercase text-gray-400 mb-2">URGENCY WATCH</p>
+          <p className="text-4xl font-black text-gray-900">
+            {insights?.urgencyWatch?.highUrgencyCount || 0}
+          </p>
+          <p className="text-sm text-gray-400 mt-2">
+            Requests currently flagged high priority by the urgency detector.
+          </p>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <p className="text-xs font-semibold tracking-widest uppercase text-gray-400 mb-2">MENTOR POOL</p>
+          <p className="text-4xl font-black text-gray-900">
+            {insights?.mentorPool?.availableMentors || 0}
+          </p>
+          <p className="text-sm text-gray-400 mt-2">
+            Trusted helpers with strong response history and contribution signals.
+          </p>
+        </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        {insightCards.map((card) => (
-          <Card key={card.key} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${card.color}`}>
-                  <card.icon className="h-5 w-5" />
+      {/* ROW 2 — Recommendations */}
+      <div className="bg-white rounded-2xl p-8 shadow-sm">
+        <p className="text-xs font-semibold tracking-widest uppercase text-[#2A7A63] mb-2">AI RECOMMENDATIONS</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Requests needing attention</h2>
+
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        ) : requests.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-400 text-sm">Nothing here yet.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {requests.map((req) => (
+              <div key={req._id} className="py-5">
+                <p className="text-sm font-semibold text-gray-900">{req.title}</p>
+                {req.aiSummary && (
+                  <p className="text-sm text-gray-500 mt-1">{req.aiSummary}</p>
+                )}
+                <div className="flex gap-2 mt-2">
+                  <CategoryTag>{req.category || 'General'}</CategoryTag>
+                  <UrgencyTag level={req.urgency} />
                 </div>
-                <CardTitle className="text-base">{card.title}</CardTitle>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">{card.description}</p>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="space-y-2">
-                  <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
-                  <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
-                  <div className="h-4 bg-muted rounded animate-pulse w-2/3" />
-                </div>
-              ) : insights?.[card.key] ? (
-                <div className="space-y-3">
-                  {/* Topics/Skills */}
-                  {(insights[card.key].topics || insights[card.key].topSkills) && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {(insights[card.key].topics || insights[card.key].topSkills).map((item, i) => (
-                        <Badge key={i} variant="default">{item}</Badge>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Counts */}
-                  {insights[card.key].highUrgencyCount !== undefined && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-destructive">
-                        {insights[card.key].highUrgencyCount}
-                      </span>
-                      <span className="text-sm text-muted-foreground">high-urgency requests</span>
-                    </div>
-                  )}
-                  {insights[card.key].availableMentors !== undefined && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-primary">
-                        {insights[card.key].availableMentors}
-                      </span>
-                      <span className="text-sm text-muted-foreground">available mentors</span>
-                    </div>
-                  )}
-
-                  {/* Summary */}
-                  {insights[card.key].summary && (
-                    <div className="bg-muted/50 rounded-lg p-3">
-                      <div className="flex items-start gap-2">
-                        <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                        <p className="text-sm text-muted-foreground">
-                          {insights[card.key].summary}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No data available</p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

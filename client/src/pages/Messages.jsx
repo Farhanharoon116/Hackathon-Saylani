@@ -1,71 +1,66 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import api from '@/api/axios'
 import PageHeader from '@/components/layout/PageHeader'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Avatar } from '@/components/ui/avatar'
-import { Send, MessageSquare as MsgIcon, Search } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Textarea } from '@/components/ui/textarea'
+import { Select } from '@/components/ui/select'
+
+function timeAgo(date) {
+  if (!date) return ''
+  const seconds = Math.floor((Date.now() - new Date(date)) / 1000)
+  if (seconds < 60) return 'just now'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
+}
 
 export default function Messages() {
   const { user } = useAuth()
-  const [conversations, setConversations] = useState([])
   const [messages, setMessages] = useState([])
-  const [selected, setSelected] = useState(null)
-  const [newMessage, setNewMessage] = useState('')
+  const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const messagesEndRef = useRef(null)
+  const [form, setForm] = useState({ recipientId: '', content: '' })
 
   useEffect(() => {
-    fetchConversations()
+    fetchMessages()
+    fetchUsers()
   }, [])
 
-  useEffect(() => {
-    if (selected) fetchMessages(selected._id || selected.recipientId)
-  }, [selected])
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  const fetchConversations = async () => {
+  const fetchMessages = async () => {
     try {
-      const { data } = await api.get('/messages/conversations')
-      const convos = data.conversations || data || []
-      setConversations(convos)
-      if (convos.length > 0 && !selected) setSelected(convos[0])
+      const { data } = await api.get('/messages')
+      setMessages(data.messages || data || [])
     } catch {
-      setConversations([])
+      setMessages([])
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchMessages = async (recipientId) => {
+  const fetchUsers = async () => {
     try {
-      const { data } = await api.get(`/messages/${recipientId}`)
-      setMessages(data.messages || data || [])
+      const { data } = await api.get('/users/leaderboard')
+      setUsers(data.users || data || [])
     } catch {
-      setMessages([])
+      setUsers([])
     }
   }
 
   const handleSend = async (e) => {
     e.preventDefault()
-    if (!newMessage.trim() || !selected) return
+    if (!form.recipientId || !form.content.trim()) return
     setSending(true)
     try {
-      const recipientId = selected._id || selected.recipientId
       await api.post('/messages', {
-        recipientId,
-        content: newMessage.trim(),
+        recipientId: form.recipientId,
+        content: form.content.trim(),
       })
-      setNewMessage('')
-      fetchMessages(recipientId)
+      setForm({ recipientId: '', content: '' })
+      fetchMessages()
     } catch {
       // silently handle
     } finally {
@@ -73,143 +68,94 @@ export default function Messages() {
     }
   }
 
-  const filteredConversations = conversations.filter((c) =>
-    (c.name || c.recipientName || '').toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
   return (
     <div>
       <PageHeader
-        label="MESSAGES"
-        title="Your conversations"
-        description="Chat with helpers and requesters in your community."
+        label="INTERACTION / MESSAGING"
+        title="Keep support moving through direct communication."
+        description="Basic messaging gives helpers and requesters a clear follow-up path once a match happens."
       />
 
-      <Card className="overflow-hidden">
-        <div className="flex h-[600px]">
-          {/* Left: Conversations list */}
-          <div className="w-80 border-r border-border flex flex-col shrink-0">
-            <div className="p-3 border-b border-border">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  className="pl-9"
-                  placeholder="Search conversations..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Left — conversation stream */}
+        <div className="bg-white rounded-2xl p-8 shadow-sm">
+          <p className="text-xs font-semibold tracking-widest uppercase text-[#2A7A63] mb-2">CONVERSATION STREAM</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent messages</h2>
+
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse" />
+              ))}
             </div>
-            <div className="flex-1 overflow-y-auto">
-              {loading ? (
-                <div className="space-y-2 p-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-14 bg-muted rounded-lg animate-pulse" />
-                  ))}
-                </div>
-              ) : filteredConversations.length === 0 ? (
-                <div className="text-center py-12">
-                  <MsgIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No conversations yet</p>
-                </div>
-              ) : (
-                filteredConversations.map((convo, i) => {
-                  const isActive = selected && (selected._id || selected.recipientId) === (convo._id || convo.recipientId)
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => setSelected(convo)}
-                      className={cn(
-                        'w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors cursor-pointer',
-                        isActive && 'bg-muted'
-                      )}
-                    >
-                      <Avatar name={convo.name || convo.recipientName || 'User'} size="sm" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">
-                          {convo.name || convo.recipientName || 'Unknown'}
+          ) : messages.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-sm">Nothing here yet.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {messages.map((msg, i) => {
+                const senderName = msg.sender?.name || 'Unknown'
+                const recipientName = msg.recipient?.name || 'Unknown'
+                return (
+                  <div key={i} className="py-5">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {senderName} → {recipientName}
                         </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {convo.lastMessage || 'No messages yet'}
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                          {msg.content}
                         </p>
                       </div>
-                    </button>
-                  )
-                })
-              )}
-            </div>
-          </div>
-
-          {/* Right: Message thread */}
-          <div className="flex-1 flex flex-col">
-            {selected ? (
-              <>
-                {/* Header */}
-                <div className="px-4 py-3 border-b border-border flex items-center gap-3">
-                  <Avatar name={selected.name || selected.recipientName || 'User'} size="sm" />
-                  <p className="font-medium text-sm">
-                    {selected.name || selected.recipientName || 'Unknown'}
-                  </p>
-                </div>
-
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {messages.length === 0 ? (
-                    <div className="text-center py-12 text-sm text-muted-foreground">
-                      No messages yet. Start the conversation!
+                      <span className="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full shrink-0 ml-3">
+                        {timeAgo(msg.createdAt)}
+                      </span>
                     </div>
-                  ) : (
-                    messages.map((msg, i) => {
-                      const isMine = (msg.sender?._id || msg.sender || msg.senderId) === user?._id
-                      return (
-                        <div key={i} className={cn('flex', isMine ? 'justify-end' : 'justify-start')}>
-                          <div
-                            className={cn(
-                              'max-w-[70%] rounded-2xl px-4 py-2 text-sm',
-                              isMine
-                                ? 'bg-primary text-primary-foreground rounded-br-md'
-                                : 'bg-muted text-foreground rounded-bl-md'
-                            )}
-                          >
-                            <p>{msg.content || msg.text}</p>
-                            <p className={cn(
-                              'text-[10px] mt-1',
-                              isMine ? 'text-primary-foreground/60' : 'text-muted-foreground'
-                            )}>
-                              {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                            </p>
-                          </div>
-                        </div>
-                      )
-                    })
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Input */}
-                <form onSubmit={handleSend} className="p-3 border-t border-border flex gap-2">
-                  <Input
-                    placeholder="Type a message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button type="submit" size="icon" disabled={sending || !newMessage.trim()}>
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </form>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <MsgIcon className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">Select a conversation to start messaging</p>
-                </div>
-              </div>
-            )}
-          </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
-      </Card>
+
+        {/* Right — send message */}
+        <div className="bg-white rounded-2xl p-8 shadow-sm">
+          <p className="text-xs font-semibold tracking-widest uppercase text-[#2A7A63] mb-2">SEND MESSAGE</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Start a conversation</h2>
+
+          <form onSubmit={handleSend} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-1.5">To</label>
+              <Select
+                value={form.recipientId}
+                onChange={(e) => setForm({ ...form, recipientId: e.target.value })}
+              >
+                <option value="">Select a user...</option>
+                {users.filter(u => u._id !== user?._id).map((u) => (
+                  <option key={u._id} value={u._id}>{u.name}</option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-1.5">Message</label>
+              <Textarea
+                rows={6}
+                placeholder="Share support details, ask for files, or suggest next steps."
+                value={form.content}
+                onChange={(e) => setForm({ ...form, content: e.target.value })}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={sending || !form.recipientId || !form.content.trim()}
+              className="w-full bg-[#2A7A63] text-white rounded-xl py-3 text-sm font-medium hover:bg-[#2A7A63]/90 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {sending ? 'Sending...' : 'Send'}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   )
 }
