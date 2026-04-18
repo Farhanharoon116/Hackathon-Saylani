@@ -1,17 +1,9 @@
 import { cn } from "@/lib/utils"
 
-const colors = [
-  "bg-emerald-500",
-  "bg-blue-500",
-  "bg-purple-500",
-  "bg-amber-500",
-  "bg-rose-500",
-  "bg-cyan-500",
-  "bg-indigo-500",
-  "bg-teal-500",
-]
+const colors = ['bg-[#2A7A63]', 'bg-amber-500', 'bg-gray-500', 'bg-rose-500', 'bg-indigo-500']
 
-function getColor(name) {
+function getColor(name, index) {
+  if (typeof index === 'number') return colors[index % colors.length]
   if (!name) return colors[0]
   let hash = 0
   for (let i = 0; i < name.length; i++) {
@@ -27,19 +19,20 @@ function getInitials(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
-export function Avatar({ name, size = "md", className }) {
+export function Avatar({ name, size = "md", className, index }) {
   const sizeClasses = {
-    sm: "h-8 w-8 text-xs",
-    md: "h-10 w-10 text-sm",
-    lg: "h-14 w-14 text-lg",
-    xl: "h-20 w-20 text-2xl",
+    xs: "w-7 h-7 text-xs",
+    sm: "w-9 h-9 text-sm",
+    md: "w-10 h-10 text-sm",
+    lg: "w-12 h-12 text-lg",
+    xl: "w-20 w-20 text-2xl",
   }
 
   return (
     <div
       className={cn(
-        "rounded-full flex items-center justify-center text-white font-semibold shrink-0",
-        getColor(name),
+        "rounded-full flex items-center justify-center text-white font-bold shrink-0",
+        getColor(name, index),
         sizeClasses[size] || sizeClasses.md,
         className
       )}
