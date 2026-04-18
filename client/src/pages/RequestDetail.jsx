@@ -3,26 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import api from '@/api/axios'
 import PageHeader from '@/components/layout/PageHeader'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
-import {
-  CheckCircle2,
-  HandHelping,
-  MapPin,
-  Calendar,
-  Tag,
-  Sparkles,
-  MessageSquare,
-  ArrowLeft,
-} from 'lucide-react'
-
-function urgencyVariant(u) {
-  if (u === 'High') return 'destructive'
-  if (u === 'Medium') return 'warning'
-  return 'default'
-}
+import { CategoryTag, UrgencyTag, StatusTag, SkillTag } from '@/components/ui/badge'
 
 export default function RequestDetail() {
   const { id } = useParams()
@@ -72,9 +54,8 @@ export default function RequestDetail() {
 
   if (loading) {
     return (
-      <div>
-        <div className="h-32 bg-muted rounded-2xl animate-pulse mb-8" />
-        <div className="h-64 bg-muted rounded-xl animate-pulse" />
+      <div className="flex justify-center py-20">
+        <div className="animate-spin w-6 h-6 border-2 border-[#2A7A63] border-t-transparent rounded-full" />
       </div>
     )
   }
@@ -82,173 +63,128 @@ export default function RequestDetail() {
   if (!request) {
     return (
       <div className="text-center py-16">
-        <h2 className="text-xl font-semibold mb-2">Request not found</h2>
-        <p className="text-muted-foreground mb-4">This request may have been deleted.</p>
-        <Link to="/explore">
-          <Button variant="outline" className="gap-2">
-            <ArrowLeft className="h-4 w-4" /> Back to Explore
-          </Button>
+        <p className="text-gray-400 text-sm">Request not found.</p>
+        <Link to="/explore" className="text-[#2A7A63] text-sm font-medium mt-2 inline-block">
+          ← Back to Explore
         </Link>
       </div>
     )
   }
 
   const isRequester = user?._id === (request.requester?._id || request.requester)
-  const isHelper = request.helpers?.some(
-    (h) => (h._id || h) === user?._id
-  )
+  const isHelper = request.helpers?.some((h) => (h._id || h) === user?._id)
+
+  const helperColors = ['bg-[#2A7A63]', 'bg-amber-500', 'bg-gray-500', 'bg-rose-500', 'bg-indigo-500']
 
   return (
     <div>
-      <PageHeader
-        label={`${request.category || 'REQUEST'} / ${request.status || 'Open'}`}
-        title={request.title}
-        description={`Posted by ${request.requester?.name || 'Anonymous'}`}
-      />
-
-      <Link to="/explore" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
-        <ArrowLeft className="h-4 w-4" /> Back to Explore
-      </Link>
+      {/* Enhanced PageHeader with tags */}
+      <PageHeader label={`${request.category || 'REQUEST'}`} title={request.title}>
+        <div className="flex flex-wrap items-center gap-2 mt-4">
+          <CategoryTag>{request.category || 'General'}</CategoryTag>
+          <UrgencyTag level={request.urgency} />
+          <StatusTag status={request.status} />
+        </div>
+        <p className="text-gray-400 text-sm mt-2 line-clamp-1">{request.description}</p>
+      </PageHeader>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Main content */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline">{request.category || 'General'}</Badge>
-                <Badge variant={urgencyVariant(request.urgency)}>
-                  {request.urgency || 'Low'} Urgency
-                </Badge>
-                <Badge variant={request.status === 'Solved' ? 'success' : 'secondary'}>
-                  {request.status || 'Open'}
-                </Badge>
+        {/* Left column */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* AI Summary */}
+          <div className="bg-white rounded-2xl p-8 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 bg-[#2A7A63] rounded-md flex items-center justify-center">
+                <span className="text-white font-bold text-sm">H</span>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-medium mb-2">Description</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {request.description}
-                </p>
+              <span className="text-sm font-semibold text-gray-900">HelpHub AI</span>
+            </div>
+            <p className="text-xs font-semibold tracking-widest uppercase text-[#2A7A63] mb-2">AI SUMMARY</p>
+            <p className="text-sm text-gray-600 mt-2">
+              {request.aiSummary || 'No AI summary available for this request.'}
+            </p>
+            {request.tags && request.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-4">
+                {request.tags.map((t, i) => <SkillTag key={i}>{t}</SkillTag>)}
               </div>
+            )}
+          </div>
 
-              {request.tags && request.tags.length > 0 && (
-                <div>
-                  <h3 className="font-medium mb-2 flex items-center gap-1">
-                    <Tag className="h-4 w-4" /> Tags
-                  </h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {request.tags.map((tag, i) => (
-                      <Badge key={i} variant="secondary">{tag}</Badge>
-                    ))}
-                  </div>
-                </div>
+          {/* Actions */}
+          <div className="bg-white rounded-2xl p-8 shadow-sm">
+            <p className="text-xs font-semibold tracking-widest uppercase text-[#2A7A63] mb-4">ACTIONS</p>
+            <div className="flex gap-3">
+              {!isRequester && !isHelper && request.status !== 'Solved' && (
+                <button
+                  onClick={handleOfferHelp}
+                  disabled={helping}
+                  className="bg-[#2A7A63] text-white rounded-full px-5 py-2.5 text-sm font-medium hover:bg-[#2A7A63]/90 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {helping ? 'Offering...' : 'I can help'}
+                </button>
               )}
-
-              {request.aiSummary && (
-                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                  <h3 className="font-medium mb-2 flex items-center gap-2 text-primary">
-                    <Sparkles className="h-4 w-4" /> AI Summary
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{request.aiSummary}</p>
-                </div>
+              {isHelper && (
+                <span className="bg-green-100 text-green-700 rounded-full px-5 py-2.5 text-sm font-medium">
+                  ✓ You're helping
+                </span>
               )}
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-2">
-                {!isRequester && !isHelper && request.status !== 'Solved' && (
-                  <Button onClick={handleOfferHelp} disabled={helping} className="gap-2">
-                    <HandHelping className="h-4 w-4" />
-                    {helping ? 'Offering...' : 'Offer to Help'}
-                  </Button>
-                )}
-                {isHelper && (
-                  <Badge variant="success" className="py-2 px-4">
-                    <CheckCircle2 className="h-4 w-4 mr-1" /> You're helping
-                  </Badge>
-                )}
-                {isRequester && request.status !== 'Solved' && (
-                  <Button onClick={handleMarkSolved} disabled={solving} variant="outline" className="gap-2">
-                    <CheckCircle2 className="h-4 w-4" />
-                    {solving ? 'Marking...' : 'Mark as Solved'}
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              {isRequester && request.status !== 'Solved' && (
+                <button
+                  onClick={handleMarkSolved}
+                  disabled={solving}
+                  className="text-gray-700 font-medium text-sm cursor-pointer hover:text-gray-900 transition-colors"
+                >
+                  {solving ? 'Marking...' : 'Mark as solved'}
+                </button>
+              )}
+              {request.status === 'Solved' && (
+                <span className="bg-green-100 text-green-700 rounded-full px-5 py-2.5 text-sm font-medium">
+                  ✓ Solved
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
+        {/* Right column */}
+        <div className="space-y-4">
           {/* Requester */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Requester</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-3 mb-3">
-                <Avatar name={request.requester?.name || 'User'} />
-                <div>
-                  <p className="font-medium">{request.requester?.name || 'Anonymous'}</p>
-                  {request.requester?.location && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <MapPin className="h-3 w-3" /> {request.requester.location}
-                    </p>
-                  )}
-                </div>
+          <div className="bg-white rounded-2xl p-8 shadow-sm">
+            <p className="text-xs font-semibold tracking-widest uppercase text-[#2A7A63] mb-4">REQUESTER</p>
+            <div className="flex items-center gap-3">
+              <Avatar name={request.requester?.name || 'User'} size="lg" />
+              <div>
+                <p className="text-lg font-semibold text-gray-900">{request.requester?.name || 'Anonymous'}</p>
+                <p className="text-sm text-gray-400">{request.requester?.location || ''}</p>
               </div>
-              {request.requester?._id && !isRequester && (
-                <div className="flex gap-2">
-                  <Link to={`/profile/${request.requester._id}`} className="flex-1">
-                    <Button variant="outline" size="sm" className="w-full">View Profile</Button>
-                  </Link>
-                  <Link to="/messages" className="flex-1">
-                    <Button variant="outline" size="sm" className="w-full gap-1">
-                      <MessageSquare className="h-3.5 w-3.5" /> Message
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Helpers */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">
-                Helpers ({request.helpers?.length || 0})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {request.helpers && request.helpers.length > 0 ? (
-                <div className="space-y-3">
-                  {request.helpers.map((helper, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <Avatar name={helper.name || 'Helper'} size="sm" />
-                      <span className="text-sm font-medium">
-                        {helper.name || 'Anonymous Helper'}
-                      </span>
+          <div className="bg-white rounded-2xl p-8 shadow-sm">
+            <p className="text-xs font-semibold tracking-widest uppercase text-[#2A7A63] mb-2">HELPERS</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">People ready to support</h3>
+            {request.helpers && request.helpers.length > 0 ? (
+              <div className="space-y-4">
+                {request.helpers.map((helper, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold ${helperColors[i % helperColors.length]}`}>
+                      {(helper.name || 'H').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No helpers yet. Be the first!</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Meta */}
-          <Card>
-            <CardContent className="pt-6 space-y-2 text-sm">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span>
-                  Created {request.createdAt ? new Date(request.createdAt).toLocaleDateString() : 'recently'}
-                </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">{helper.name || 'Anonymous'}</p>
+                      <p className="text-xs text-gray-400">{(helper.skills || []).slice(0, 3).join(', ')}</p>
+                    </div>
+                    <span className="bg-gray-100 text-gray-700 rounded-full px-3 py-1 text-xs font-medium shrink-0">
+                      Trust {helper.trustScore || 0}%
+                    </span>
+                  </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
+            ) : (
+              <p className="text-gray-400 text-sm">No helpers yet. Be the first!</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
