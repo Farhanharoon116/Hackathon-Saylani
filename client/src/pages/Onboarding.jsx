@@ -133,11 +133,11 @@ export default function Onboarding() {
                   </div>
                 </div>
               )}
-              {suggestions.mayNeedHelpIn && suggestions.mayNeedHelpIn.length > 0 && (
+              {suggestions.mightNeedHelpWith && suggestions.mightNeedHelpWith.length > 0 && (
                 <div>
                   <p className="text-sm font-medium text-gray-900 mb-3">You may need help in:</p>
                   <div className="flex flex-wrap gap-2">
-                    {suggestions.mayNeedHelpIn.map((item, i) => (
+                    {suggestions.mightNeedHelpWith.map((item, i) => (
                       <span key={i} className="bg-amber-50 text-amber-700 rounded-full px-3 py-1 text-sm">
                         {item}
                       </span>
