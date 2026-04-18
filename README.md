@@ -1,100 +1,195 @@
-# HelpHub AI — Full-Stack Community Support Platform
+# HelpHub AI 🤝
 
-A multi-page AI-powered community support platform for students and mentors, built with React, Node.js, Express, MongoDB, and Google Gemini AI.
+A full-stack, AI-powered community support platform that connects students and mentors. Built for SMIT Grand Coding Night — April 2026.
+
+---
+
+## What It Does
+
+HelpHub AI solves a real problem in learning communities — students struggle to find timely help, and skilled people have no structured place to offer it. HelpHub bridges that gap with:
+
+- **Structured help requests** with AI-assisted categorization, urgency detection, and description rewrites
+- **Smart helper matching** through a filterable community feed
+- **Trust & reputation system** — trust scores, badges, and a leaderboard that recognizes real contributors
+- **AI Center** powered by Gemini 1.5 Flash — surfaces trends, urgent requests, and platform insights
+- **Real-time-like notifications** for matches, status changes, and reputation updates
+- **Direct messaging** between helpers and requesters
+- **Admin panel** for content moderation and platform analytics
+
+---
 
 ## Tech Stack
 
-- **Frontend:** React + Vite + Tailwind CSS + shadcn/ui components
-- **Backend:** Node.js + Express.js
-- **Database:** MongoDB + Mongoose
-- **Auth:** JWT (Bearer token in Authorization header)
-- **AI:** Google Gemini API (gemini-2.0-flash-lite)
+| Layer | Technology |
+|---|---|
+| Frontend | React 18 + Vite + Tailwind CSS + shadcn/ui |
+| Backend | Node.js + Express.js |
+| Database | MongoDB Atlas + Mongoose |
+| Auth | JWT (stored in localStorage) |
+| AI | Google Gemini 1.5 Flash API |
+| Dev tooling | Nodemon, concurrently |
+
+---
+
+## Pages
+
+| Route | Description |
+|---|---|
+| `/` | Landing page with community stats and featured requests |
+| `/auth` | Login and signup with role selection |
+| `/onboarding` | Profile setup with Gemini AI suggestions |
+| `/dashboard` | Personal stats, recent requests, AI insights |
+| `/explore` | Filterable community feed of all help requests |
+| `/create-request` | AI-assisted request creation (live Gemini suggestions) |
+| `/request/:id` | Full request detail, AI summary, helper actions |
+| `/messages` | Direct messaging between users |
+| `/leaderboard` | Top helpers ranked by trust score and contributions |
+| `/ai-center` | Platform intelligence — trends, urgency watch, mentor pool |
+| `/notifications` | Live notification feed |
+| `/profile` | Public profile + edit identity |
+| `/admin` | Admin dashboard, request moderation, user management |
+
+---
 
 ## Getting Started
 
 ### Prerequisites
 - Node.js 18+
-- MongoDB (local or Atlas)
-- Google Gemini API key
+- MongoDB Atlas account (free tier works)
+- Google AI Studio account for Gemini API key
 
-### Server Setup
+### 1. Clone the repo
+
 ```bash
-cd server
-cp .env.example .env   # Edit with your MongoDB URI, JWT secret, and Gemini API key
-npm install
-node index.js
+git clone https://github.com/yourusername/helphub-ai.git
+cd helphub-ai
 ```
 
-### Client Setup
-```bash
-cd client
-npm install
-npm run dev
-```
+### 2. Set up environment variables
 
-The client runs on `http://localhost:5173` and proxies API requests to `http://localhost:5000`.
+Create `server/.env`:
 
-### Environment Variables
-
-**server/.env**
-```
+```env
 PORT=5000
-MONGO_URI=mongodb+srv://your_connection_string
-JWT_SECRET=your_jwt_secret
+MONGO_URI=your_mongodb_atlas_connection_string
+JWT_SECRET=your_random_secret_string
 JWT_EXPIRES_IN=7d
 GEMINI_API_KEY=your_gemini_api_key
 CLIENT_URL=http://localhost:5173
 ```
 
-**client/.env**
-```
+Create `client/.env`:
+
+```env
 VITE_API_URL=http://localhost:5000/api
 ```
 
-## Features
+### 3. Install dependencies
 
-- **User Authentication** — Register, login, JWT-based auth
-- **Role-Based Access** — Need Help, Can Help, Both roles + Admin
-- **Help Requests** — Create, browse, filter, and offer help
-- **AI-Powered** — Auto-categorize requests, suggest tags, rewrite descriptions
-- **Messaging** — Direct messaging between users
-- **Leaderboard** — Trust score and contribution tracking
-- **Notifications** — Real-time updates for matches, status changes
-- **Admin Panel** — Manage users and requests
-- **Onboarding** — AI-guided skill and interest setup
+```bash
+# Install server dependencies
+cd server && npm install
 
-## API Endpoints
+# Install client dependencies
+cd ../client && npm install
+```
 
-| Route | Methods | Description |
-|-------|---------|-------------|
-| `/api/auth` | POST /register, POST /login, GET /me | Authentication |
-| `/api/requests` | GET /, GET /:id, POST /, PATCH /:id/solve, POST /:id/help | Help requests |
-| `/api/messages` | GET /, POST / | Messaging |
-| `/api/users` | GET /leaderboard, GET /:id, PUT /profile | User profiles |
-| `/api/notifications` | GET /, PATCH /:id/read, PATCH /read-all | Notifications |
-| `/api/ai` | POST /suggest, POST /onboarding, GET /insights | AI features |
-| `/api/admin` | GET /stats, GET /requests, DELETE /requests/:id, GET /users, PATCH /users/:id/ban | Admin |
+### 4. Seed the database
+
+```bash
+cd server
+node seed.js
+```
+
+This creates 4 demo users and sample requests.
+
+### 5. Run the app
+
+**Option A — from root (if concurrently is configured):**
+```bash
+npm run dev
+```
+
+**Option B — two separate terminals:**
+```bash
+# Terminal 1 — backend
+cd server && npm run dev
+
+# Terminal 2 — frontend
+cd client && npm run dev
+```
+
+### 6. Open in browser
+
+```
+http://localhost:5173
+```
+
+---
+
+## Demo Accounts
+
+| Name | Email | Password | Role |
+|---|---|---|---|
+| Ayesha Khan | ayesha@helphub.ai | password123 | Both |
+| Hassan Ali | hassan@helphub.ai | password123 | Can Help |
+| Sara Noor | sara@helphub.ai | password123 | Both |
+| Admin | admin@helphub.ai | password123 | Admin |
+
+---
+
+## AI Features (Gemini 1.5 Flash)
+
+- **Create Request** — as you type your description, Gemini suggests category, urgency, tags, and a rewritten description in real time (debounced)
+- **Onboarding** — Gemini analyzes your skills and interests and suggests what you can help with and where you may need help
+- **Request Detail** — every request stores an AI-generated summary for helpers scanning the feed
+- **AI Center** — Gemini summarizes platform-wide trends, flags urgent requests, and surfaces helpers with strong signals
+
+---
+
+## Trust & Badge System
+
+Trust score increases by **+10** every time a request you helped with is marked as solved.
+
+| Badge | Condition |
+|---|---|
+| Fast Responder | 5+ contributions |
+| Code Rescuer | 10+ contributions |
+| Top Mentor | 20+ contributions |
+| Community Voice | Trust score ≥ 80 |
+| Design Ally | Trust score ≥ 100 |
+
+---
 
 ## Project Structure
 
 ```
 helphub-ai/
-├── client/                        # React + Vite frontend
-│   ├── src/
-│   │   ├── api/                   # Axios instance
-│   │   ├── components/            # UI + layout components
-│   │   ├── context/               # AuthContext
-│   │   ├── pages/                 # All page components
-│   │   ├── routes/                # Protected route wrappers
-│   │   ├── hooks/                 # Custom hooks
-│   │   └── lib/                   # Utilities
-│   └── ...
-├── server/                        # Express backend
-│   ├── config/                    # DB connection
-│   ├── controllers/               # Route handlers
-│   ├── middleware/                 # Auth + admin middleware
-│   ├── models/                    # Mongoose schemas
-│   ├── routes/                    # Express routes
-│   └── utils/                     # Gemini AI helper
-└── README.md
+├── client/          # React + Vite frontend
+│   └── src/
+│       ├── api/         # Axios instance
+│       ├── components/  # Navbar, PageHeader, UI components
+│       ├── context/     # AuthContext (JWT + user state)
+│       ├── pages/       # One file per route
+│       └── routes/      # ProtectedRoute, AdminRoute
+│
+└── server/          # Node + Express backend
+    ├── controllers/ # Business logic per resource
+    ├── middleware/  # JWT auth, admin guard
+    ├── models/      # Mongoose schemas
+    ├── routes/      # Express routers
+    └── utils/       # Gemini API helper
 ```
+
+---
+
+## Built At
+
+**SMIT Grand Coding Night — April 2026**
+Helplytics AI Challenge — Community Support Platform Track
+
+---
+
+## License
+
+MIT
